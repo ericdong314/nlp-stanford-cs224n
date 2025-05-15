@@ -33,10 +33,11 @@ class PartialParse(object):
         ### Note: If you need to use the sentence object to initialize anything, make sure to not directly 
         ###       reference the sentence object.  That is, remember to NOT modify the sentence object. 
 
+        self.stack = ['ROOT']
+        self.buffer = sentence[:]
+        self.dependencies = []
 
         ### END YOUR CODE
-
-
     def parse_step(self, transition):
         """Performs a single parse step by applying the given transition to this partial parse
 
@@ -52,6 +53,18 @@ class PartialParse(object):
         ###         2. Left Arc
         ###         3. Right Arc
 
+        if transition == 'S':
+            self.stack.append(self.buffer.pop(0))
+        elif transition == 'LA':
+            left, right = self.stack[-2:]
+            self.dependencies.append((right, left))
+            self.stack.pop(-2)
+        elif transition == 'RA':
+            left, right = self.stack[-2:]
+            self.dependencies.append((left, right))
+            self.stack.pop(-1)
+        else:
+            raise ValueError('Unknown transaction')
 
         ### END YOUR CODE
 
@@ -103,6 +116,18 @@ def minibatch_parse(sentences, model, batch_size):
     ###             to remove objects from the `unfinished_parses` list. This will free the underlying memory that
     ###             is being accessed by `partial_parses` and may cause your code to crash.
 
+    partial_parses = [PartialParse(s) for s in sentences]
+    unfinished_parses = partial_parses[:]
+    while unfinished_parses:
+        batch = unfinished_parses[:batch_size]
+        transitions = model.predict(batch)
+        for p, t in zip(batch, transitions):
+            p.parse_step(t)
+        for i in reversed(range(len(unfinished_parses))):
+            p = unfinished_parses[i]
+            if (not p.buffer) and len(p.stack) == 1:
+                unfinished_parses.pop(i)
+    dependencies = [p.dependencies for p in partial_parses]
 
     ### END YOUR CODE
 
@@ -219,7 +244,6 @@ def test_minibatch_parse():
                       (('ROOT', 'is'), ('dependency', 'interleaving'),
                       ('dependency', 'test'), ('is', 'dependency'), ('is', 'this')))
     print("minibatch_parse test passed!")
-
 
 if __name__ == '__main__':
     args = sys.argv
