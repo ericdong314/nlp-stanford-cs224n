@@ -117,7 +117,9 @@ class ParserModel(nn.Module):
         ###     View: https://pytorch.org/docs/stable/tensors.html#torch.Tensor.view
         ###     Flatten: https://pytorch.org/docs/stable/generated/torch.flatten.html
 
-        x = torch.stack([self.embeddings[s_indices,:].reshape(-1) for s_indices in w])
+        # 60 x slower: (using python for loop)
+        # x = torch.stack([self.embeddings[s_indices,:].reshape(-1) for s_indices in w])
+        x = self.embeddings[w].view(w.shape[0], -1)
 
         ### END YOUR CODE
         return x
