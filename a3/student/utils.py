@@ -20,7 +20,7 @@ import torch.nn.functional as F
 import nltk
 import sentencepiece as spm
 nltk.download('punkt')
-
+nltk.download('punkt_tab')
 
 def pad_sents(sents, pad_token):
     """ Pad list of sentences according to the longest sentence in the batch.
@@ -36,7 +36,9 @@ def pad_sents(sents, pad_token):
 
     ### YOUR CODE HERE (~6 Lines)
 
-
+    max_l = max(len(s) for s in sents)
+    for s in sents:
+        sents_padded.append(s + [pad_token] * (max_l - len(s)))
 
     ### END YOUR CODE
 
