@@ -88,11 +88,11 @@ class NMT(nn.Module):
 
         self.post_embed_cnn = nn.Conv1d(in_channels=embed_size, out_channels=embed_size, kernel_size=2, padding='same')
         self.encoder = nn.LSTM(input_size=embed_size, hidden_size=hidden_size, bidirectional=True)
-        self.decoder = nn.LSTMCell(input_size=embed_size, hidden_size=hidden_size)
+        self.decoder = nn.LSTMCell(input_size=embed_size + hidden_size, hidden_size=hidden_size)
         self.h_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
         self.c_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
         self.att_projection = nn.Linear(2 * hidden_size, hidden_size, bias=False)
-        self.combined_output_projection = nn.Linear(3 * hidden_size, hidden_size)
+        self.combined_output_projection = nn.Linear(3 * hidden_size, hidden_size, bias=False)
         self.target_vocab_projection = nn.Linear(hidden_size, len(vocab.tgt))
         self.dropout = nn.Dropout(dropout_rate)
 
@@ -341,6 +341,10 @@ class NMT(nn.Module):
         ###     Tensor Squeeze:
         ###         https://pytorch.org/docs/stable/generated/torch.squeeze.html
 
+        dec_state = self.decoder(Ybar_t, dec_state)
+        dec_hidden, dec_cell = dec_state
+        e_t = torch.bmm(enc_hiddens_proj, dec_hidden.unsqueeze(-1)).squeeze(-1)
+        
 
         ### END YOUR CODE
 
@@ -375,6 +379,11 @@ class NMT(nn.Module):
         ###     Tanh:
         ###         https://pytorch.org/docs/stable/generated/torch.tanh.html
 
+        alpha_t = nn.functional.softmax(e_t, 1)
+        a_t = torch.bmm(alpha_t.unsqueeze(1), enc_hiddens).squeeze(1)
+        U_t = torch.cat([a_t, dec_hidden], -1)
+        V_t = self.combined_output_projection(U_t)
+        O_t = self.dropout(torch.tanh(V_t))
 
         ### END YOUR CODE
 
