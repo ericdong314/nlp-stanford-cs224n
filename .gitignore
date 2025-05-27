@@ -1,2 +1,5 @@
 model.weights
 *.pyc
+outputs
+runs
+model.*
