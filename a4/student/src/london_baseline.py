@@ -17,7 +17,7 @@ def main():
         l = sum(1 for line in f)
     predictions = ['London'] * l
     total, correct = utils.evaluate_places(path, predictions)
-    accuracy = correct / total
+    accuracy = correct / total * 100
     ### END YOUR CODE ###
 
     return accuracy
