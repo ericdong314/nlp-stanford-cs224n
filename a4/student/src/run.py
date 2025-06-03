@@ -66,7 +66,7 @@ model = None
 if args.variant == 'vanilla':
     # TODO: [part c] Make some model here
     ### YOUR CODE HERE ###
-    model = models.GPT(mconf)
+    model = models.GPT(mconf).to(device)
     ### END YOUR CODE ###
 elif args.variant == 'rope':
     # TODO: [part g] Make some other model here
@@ -144,7 +144,7 @@ elif args.function == 'finetune':
     if args.reading_params_path:
         params = torch.load(args.reading_params_path)
         model.load_state_dict(params)
-    text = open('birth_places_train.tsv', encoding='utf-8').read()
+    text = open(args.finetune_corpus_path, encoding='utf-8').read()
     finetune_dataset = dataset.NameDataset(pretrain_dataset, text)
     tconf = trainer.TrainerConfig(
             max_epochs=10 if args.reading_params_path else 75,
