@@ -101,7 +101,38 @@ class CharCorruptionDataset(Dataset):
     def __getitem__(self, idx):
         # TODO [part e]: see spec above
         ### YOUR CODE HERE ###
-        pass
+
+        # 1. Truncate
+        min_len = 4
+        max_len = int(self.block_size * 7 / 8)
+        doc = self.data[idx]
+        if len(doc) < min_len:
+            raise ValueError("Document too short for corruption.")
+        max_possible_len = min(max_len, len(doc))
+        trunc_len = random.randint(min_len, max_possible_len)
+        doc = doc[:trunc_len]
+
+        # 2. Break into substrings
+        masked_len = random.randint(0, trunc_len // 2)
+        prefix_len = random.randint(0, trunc_len - masked_len)
+        prefix = doc[:prefix_len]
+        masked_content = doc[prefix_len:prefix_len + masked_len]
+        suffix = doc[prefix_len + masked_len:]
+
+        # 3. Rearrange substrings
+        masked_string_raw = prefix + self.MASK_CHAR + suffix + self.MASK_CHAR + masked_content
+        padding_len =  self.block_size + 1 - len(masked_string_raw)
+        masked_string = masked_string_raw + self.PAD_CHAR * padding_len
+
+        # 4. Construct example pair
+        ex_in = masked_string[:-1]
+        ex_out = masked_string[1:]
+
+        # 5. Encode
+        x = torch.tensor([self.stoi[ch] for ch in ex_in])
+        y = torch.tensor([self.stoi[ch] for ch in ex_out])
+
+        return x, y
         ### END YOUR CODE ###
 
 
