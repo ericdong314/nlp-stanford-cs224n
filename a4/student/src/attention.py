@@ -68,7 +68,7 @@ def apply_rotary_emb(x, rope_cache):
     x_real = x.view(*x.shape[:-1], x.shape[-1]//2, 2)
     rope_cplx = torch.view_as_complex(rope_real)
     x_cplx = torch.view_as_complex(x_real)
-    rotated_x_cplx = x_cplx * rope_cplx.unsqueeze(0)
+    rotated_x_cplx = x_cplx * rope_cplx.unsqueeze(0).unsqueeze(0)
     rotated_x = torch.view_as_real(rotated_x_cplx).view_as(x)
     ### END YOUR CODE ###
     return rotated_x
@@ -97,7 +97,8 @@ class CausalSelfAttention(nn.Module):
             # Hint: The maximum sequence length is given by config.block_size.
             rope_cache = None
             ### YOUR CODE HERE ###
-            pass
+            head_dim = config.n_embd // config.n_head
+            rope_cache = precompute_rotary_emb(head_dim, config.block_size)
             ### END YOUR CODE ###
 
             self.register_buffer("rope_cache", rope_cache)
@@ -123,7 +124,8 @@ class CausalSelfAttention(nn.Module):
         if self.rope:
             # TODO: [part g] Apply RoPE to the query and key.
             ### YOUR CODE HERE ###
-            pass
+            q = apply_rotary_emb(q, self.rope_cache)
+            k = apply_rotary_emb(k, self.rope_cache)
             ### END YOUR CODE ###
 
         # causal self-attention; Self-attend: (B, nh, T, hs) x (B, nh, hs, T) -> (B, nh, T, T)
