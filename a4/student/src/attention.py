@@ -38,7 +38,11 @@ def precompute_rotary_emb(dim, max_positions):
     rope_cache = None
     # TODO: [part g]
     ### YOUR CODE HERE ###
-    pass
+    assert dim % 2 == 0
+    positions = torch.arange(max_positions)
+    i = torch.arange(1, dim//2 + 1)
+    t_theta_i = torch.outer(positions, 10000**(-2*(i-1)/dim))
+    rope_cache = torch.stack([torch.cos(t_theta_i), torch.sin(t_theta_i)], dim=-1)
     ### END YOUR CODE ###
     return rope_cache
 
@@ -58,7 +62,14 @@ def apply_rotary_emb(x, rope_cache):
 
     rotated_x = None
     ### YOUR CODE HERE ###
-    pass
+    assert x.shape[-1] % 2 == 0
+    seq_length = x.shape[-2]
+    rope_real = rope_cache[:seq_length]
+    x_real = x.view(*x.shape[:-1], x.shape[-1]//2, 2)
+    rope_cplx = torch.view_as_complex(rope_real)
+    x_cplx = torch.view_as_complex(x_real)
+    rotated_x_cplx = x_cplx * rope_cplx.unsqueeze(0)
+    rotated_x = torch.view_as_real(rotated_x_cplx).view_as(x)
     ### END YOUR CODE ###
     return rotated_x
 
